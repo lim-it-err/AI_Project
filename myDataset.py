@@ -16,7 +16,8 @@ import pandas as pd
 import csv
 import time
 
-from models import *
+# from models import *
+from torchvision import models
 from models.resnet import ResNet18
 from models.vit import ViT
 from utils import progress_bar
@@ -38,6 +39,7 @@ parser.add_argument('--patch', default='4', type=int)
 parser.add_argument('--convkernel', default='8', type=int)
 parser.add_argument('--cos', action='store_false', help='Train with cosine annealing scheduling')
 import sys
+
 args = parser.parse_args()
 def reporthook(count, block_size, total_size):
     global start_time
@@ -61,7 +63,7 @@ if args.amp:
 
 if args.aug:
     import albumentations
-bs = int(args.bs)
+BATCH_SIZE = int(args.bs)
 
 use_amp = args.amp
 
@@ -134,7 +136,7 @@ trainloader = torch.utils.data.DataLoader(
         classes,
         transform=transform_train
     ),
-    batch_size=4,
+    batch_size=BATCH_SIZE,
     shuffle = True
 )
 testloader = torch.utils.data.DataLoader(
@@ -143,7 +145,7 @@ testloader = torch.utils.data.DataLoader(
         classes,
         transform=transform_test
     ),
-    batch_size=4,
+    batch_size=BATCH_SIZE,
     shuffle = False
 )
 
@@ -154,7 +156,11 @@ testloader = torch.utils.data.DataLoader(
 print('==> Building model..')
 # net = VGG('VGG19')
 if args.net == 'res18':
-    net = ResNet18()
+    # net = ResNet18()      //Some Error in Model. Might fix soon
+    net = models.resnet18(pretrained=True)
+    num_classes = NUM_CLASSES
+    num_ftrs = net.fc.in_features
+    net.fc = nn.Linear(num_ftrs, num_classes)
 # elif args.net=='vgg':
 #     net = VGG('VGG19')
 # elif args.net=='res34':
