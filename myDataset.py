@@ -17,7 +17,6 @@ import csv
 import time
 
 # from models import *
-from torchvision import models
 from models.resnet import ResNet18
 from models.vit import ViT
 from utils import progress_bar
@@ -39,7 +38,6 @@ parser.add_argument('--patch', default='4', type=int)
 parser.add_argument('--convkernel', default='8', type=int)
 parser.add_argument('--cos', action='store_false', help='Train with cosine annealing scheduling')
 import sys
-
 args = parser.parse_args()
 def reporthook(count, block_size, total_size):
     global start_time
@@ -63,7 +61,7 @@ if args.amp:
 
 if args.aug:
     import albumentations
-BATCH_SIZE = int(args.bs)
+bs = int(args.bs)
 
 use_amp = args.amp
 
@@ -73,20 +71,21 @@ start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
 # Data
 print('==> Preparing data..')
-if args.net == "vit_timm":
-    size = 384
-else:
-    size = 32
+# if args.net == "vit_timm":
+#     size = 384
+# else:
+#     size = 32
+size = 200
 transform_train = transforms.Compose([
     transforms.RandomCrop(224, padding=18),
-    # transforms.Resize(size),
+    transforms.Resize(size),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 ])
 
 transform_test = transforms.Compose([
-    # transforms.Resize(size),
+    transforms.Resize(size),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
@@ -136,7 +135,7 @@ trainloader = torch.utils.data.DataLoader(
         classes,
         transform=transform_train
     ),
-    batch_size=BATCH_SIZE,
+    batch_size=bs,
     shuffle = True
 )
 testloader = torch.utils.data.DataLoader(
@@ -145,7 +144,7 @@ testloader = torch.utils.data.DataLoader(
         classes,
         transform=transform_test
     ),
-    batch_size=BATCH_SIZE,
+    batch_size=bs,
     shuffle = False
 )
 
@@ -156,11 +155,7 @@ testloader = torch.utils.data.DataLoader(
 print('==> Building model..')
 # net = VGG('VGG19')
 if args.net == 'res18':
-    # net = ResNet18()      //Some Error in Model. Might fix soon
-    net = models.resnet18(pretrained=True)
-    num_classes = NUM_CLASSES
-    num_ftrs = net.fc.in_features
-    net.fc = nn.Linear(num_ftrs, num_classes)
+    net = ResNet18(num_classes=2)
 # elif args.net=='vgg':
 #     net = VGG('VGG19')
 # elif args.net=='res34':
@@ -175,7 +170,7 @@ elif args.net == "convmixer":
 elif args.net == "vit":
     # ViT for cifar10
     net = ViT(
-        image_size=224,
+        image_size=size,
         patch_size=args.patch,
         num_classes=NUM_CLASSES,
         dim=128,
