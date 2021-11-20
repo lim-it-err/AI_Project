@@ -76,7 +76,7 @@ if args.net == "vit_timm":
 else:
     size = 32
 transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
+    transforms.RandomCrop(224, padding=18),
     # transforms.Resize(size),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
@@ -127,8 +127,7 @@ if not os.path.isdir('TCGA_DATA'):
 # DATA_PATH_TRAIN_LIST = glob('/content/TCGA_DATA/CRC_TRAIN/*/*.png')
 # DATA_PATH_TEST_LIST = glob('/content/TCGA_DATA/CRC_TRAIN/*/*.png')
 DATA_PATH_TRAIN_LIST = glob('TCGA_DATA/CRC_TRAIN/*/*.png')
-DATA_PATH_TEST_LIST = glob('/TCGA_DATA/CRC_TEST/*/*.png')
-
+DATA_PATH_TEST_LIST = glob('TCGA_DATA/CRC_TEST/*/*.png')
 trainloader = torch.utils.data.DataLoader(
     CRC_DataSet(
         DATA_PATH_TRAIN_LIST,
@@ -148,6 +147,7 @@ testloader = torch.utils.data.DataLoader(
     shuffle = False
 )
 
+# print(trainlo)
 # classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 # Model
@@ -169,13 +169,13 @@ elif args.net == "convmixer":
 elif args.net == "vit":
     # ViT for cifar10
     net = ViT(
-        image_size=32,
+        image_size=224,
         patch_size=args.patch,
         num_classes=NUM_CLASSES,
-        dim=512,
+        dim=128,
         depth=6,
         heads=8,
-        mlp_dim=512,
+        mlp_dim=128,
         dropout=0.1,
         emb_dropout=0.1
     )
@@ -215,11 +215,11 @@ if not args.cos:
                                                factor=0.1)
 else:
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.n_epochs)
-
-if args.cos:
-    wandb.config.scheduler = "cosine"
-else:
-    wandb.config.scheduler = "ReduceLROnPlateau"
+#
+# if args.cos:
+#     wandb.config.scheduler = "cosine"
+# else:
+#     wandb.config.scheduler = "ReduceLROnPlateau"
 
 ##### Training
 scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
@@ -311,11 +311,12 @@ for epoch in range(start_epoch, args.n_epochs):
 
     list_loss.append(val_loss)
     list_acc.append(acc)
-
+    print('epoch ', epoch, ' train loss ', trainloss, ' val loss ', val_loss, ' val_acc ', acc,
+          ' lr ' , optimizer.param_groups[0]["lr"], " epoch_time ",  time.time() - start)
     # Log training..
-    wandb.log({'epoch': epoch, 'train_loss': trainloss, 'val_loss': val_loss, "val_acc": acc,
-               "lr": optimizer.param_groups[0]["lr"],
-               "epoch_time": time.time() - start})
+    # wandb.log({'epoch': epoch, 'train_loss': trainloss, 'val_loss': val_loss, "val_acc": acc,
+    #            "lr": optimizer.param_groups[0]["lr"],
+    #            "epoch_time": time.time() - start})
 
     # Write out csv..
     with open(f'log/log_{args.net}_patch{args.patch}.csv', 'w') as f:
