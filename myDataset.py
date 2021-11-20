@@ -76,17 +76,17 @@ print('==> Preparing data..')
 #     size = 384
 # else:
 #     size = 32
-size = 200
+size = 224
 transform_train = transforms.Compose([
-    transforms.RandomCrop(224, padding=18),
-    transforms.Resize(size),
-    transforms.RandomHorizontalFlip(),
+    # transforms.RandomCrop(224, padding=18),
+    # transforms.Resize(size),
+    # transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 ])
 
 transform_test = transforms.Compose([
-    transforms.Resize(size),
+    # transforms.Resize(size),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
@@ -106,28 +106,27 @@ data_name = ['CRC_DX_TRAIN_MSIMUT', 'CRC_DX_TRAIN_MSS', 'CRC_DX_TEST_MSS', 'CRC_
 front_link = 'https://zenodo.org/record/2530835/files/'
 back_link = '.zip?download=1'
 
-# 폴더 디렉토리 생성
-if not os.path.isdir('TCGA_DATA'):
-    os.makedirs('TCGA_DATA')
-    os.makedirs('TCGA_DATA/CRC_TRAIN')
-    os.makedirs('TCGA_DATA/CRC_TEST')
+# # 폴더 디렉토리 생성
+# if not os.path.isdir('TCGA_DATA'):
+#     os.makedirs('TCGA_DATA')
+#     os.makedirs('TCGA_DATA/CRC_TRAIN')
+#     os.makedirs('TCGA_DATA/CRC_TEST')
+#
+#     for idx, data_type in enumerate(data_name):
+#         # 코랩 아니면 아래 경로 수정
+#         print(data_type+" download start")
+#         if idx <= 1:
+#             os.chdir('TCGA_DATA/CRC_TRAIN')
+#         else:
+#             os.chdir('TCGA_DATA/CRC_TEST')
+#
+#         link = front_link + data_type + back_link
+#         request.urlretrieve(link, data_type, reporthook)
+#         zipfile.ZipFile(data_type).extractall()
+#         print('One Done')
 
-    for idx, data_type in enumerate(data_name):
-        # 코랩 아니면 아래 경로 수정
-        print(data_type+" download start")
-        if idx <= 1:
-            os.chdir('TCGA_DATA/CRC_TRAIN')
-        else:
-            os.chdir('TCGA_DATA/CRC_TEST')
-
-        link = front_link + data_type + back_link
-        request.urlretrieve(link, data_type, reporthook)
-        zipfile.ZipFile(data_type).extractall()
-        print('One Done')
 
 
-# DATA_PATH_TRAIN_LIST = glob('/content/TCGA_DATA/CRC_TRAIN/*/*.png')
-# DATA_PATH_TEST_LIST = glob('/content/TCGA_DATA/CRC_TRAIN/*/*.png')
 DATA_PATH_TRAIN_LIST = glob('TCGA_DATA/CRC_TRAIN/*/*.png')
 DATA_PATH_TEST_LIST = glob('TCGA_DATA/CRC_TEST/*/*.png')
 trainloader = torch.utils.data.DataLoader(
@@ -146,7 +145,7 @@ testloader = torch.utils.data.DataLoader(
         transform=transform_test
     ),
     batch_size=bs,
-    shuffle = False
+    shuffle = True
 )
 
 # print(trainlo)
@@ -156,7 +155,7 @@ testloader = torch.utils.data.DataLoader(
 print('==> Building model..')
 # net = VGG('VGG19')
 if args.net == 'res18':
-    net = models.resnet18(pretrained=True)
+    net = models.resnet18(pretrained=False)
     num_classes = NUM_CLASSES
     num_ftrs = net.fc.in_features
     net.fc = nn.Linear(num_ftrs, num_classes)
@@ -172,6 +171,7 @@ elif args.net == "convmixer":
     # from paper, accuracy >96%. you can tune the depth and dim to scale accuracy and speed.
     net = ConvMixer(256, 16, kernel_size=args.convkernel, patch_size=1, n_classes=NUM_CLASSES)
 elif args.net == "vit":
+    print('VIT MODEL')
     # ViT for cifar10
     net = ViT(
         image_size=size,
@@ -187,8 +187,22 @@ elif args.net == "vit":
 elif args.net == "vit_timm":
     import timm
 
-    net = timm.create_model("vit_large_patch16_384", pretrained=True)
+    net = timm.create_model("vit_large_patch16_384", pretrained=False)
     net.head = nn.Linear(net.head.in_features, NUM_CLASSES)
+    print("model adaptation finished")
+
+elif args.net == "glasses":
+    from glasses.models import AutoModel
+    # from glasses.models import AutoTransform
+
+    net = AutoModel.from_pretrained("vit_small_patch16_224")
+    # cfg = AutoTransform.from_name('vit_large_patch16_224')
+    # why there are no class named AutoTransform?? // Jh
+    # print(cfg)
+elif args.net == "This":
+    # https: // github.com / lukemelas / PyTorch - Pretrained - ViT
+    from pytorch_pretrained_vit import ViT
+    net = ViT('B_16_imagenet1k', pretrained=True, image_size=size, num_classes=2)
 
 net = net.to(device)
 if device == 'cuda':
@@ -251,7 +265,7 @@ def train(epoch):
         _, predicted = outputs.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
-
+        # print(predicted, targets)
         progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                      % (train_loss / (batch_idx + 1), 100. * correct / total, correct, total))
     return train_loss / (batch_idx + 1)
@@ -273,6 +287,7 @@ def test(epoch):
             test_loss += loss.item()
             _, predicted = outputs.max(1)
             total += targets.size(0)
+            # print(predicted, targets)
             correct += predicted.eq(targets).sum().item()
 
             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'

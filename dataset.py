@@ -27,6 +27,7 @@ class CRC_DataSet(Dataset):
         PIL_image = Image.fromarray(image)      #JH: Added This Part
         if self.transform is not None:
             image = self.transform(PIL_image)
+            # print(self.classes, self.label[idx])
         return image, self.classes.index(self.label[idx])
 
 
