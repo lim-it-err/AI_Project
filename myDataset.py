@@ -17,6 +17,7 @@ import csv
 import time
 
 # from models import *
+from torchvision import models
 from models.resnet import ResNet18
 from models.vit import ViT
 from utils import progress_bar
@@ -155,7 +156,10 @@ testloader = torch.utils.data.DataLoader(
 print('==> Building model..')
 # net = VGG('VGG19')
 if args.net == 'res18':
-    net = ResNet18(num_classes=2)
+    net = models.resnet18(pretrained=True)
+    num_classes = NUM_CLASSES
+    num_ftrs = net.fc.in_features
+    net.fc = nn.Linear(num_ftrs, num_classes)
 # elif args.net=='vgg':
 #     net = VGG('VGG19')
 # elif args.net=='res34':
@@ -173,10 +177,10 @@ elif args.net == "vit":
         image_size=size,
         patch_size=args.patch,
         num_classes=NUM_CLASSES,
-        dim=128,
+        dim=512,
         depth=6,
         heads=8,
-        mlp_dim=128,
+        mlp_dim=512,
         dropout=0.1,
         emb_dropout=0.1
     )
