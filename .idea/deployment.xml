@@ -5,7 +5,7 @@
       <paths name="scar1804@115.145.212.129:8585 password">
         <serverdata>
           <mappings>
-            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/media/scar1804/46EE5AC6EE5AAE45" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

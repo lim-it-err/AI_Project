@@ -38,6 +38,8 @@ parser.add_argument('--n_epochs', type=int, default='50')
 parser.add_argument('--patch', default='4', type=int)
 parser.add_argument('--convkernel', default='8', type=int)
 parser.add_argument('--cos', action='store_false', help='Train with cosine annealing scheduling')
+
+
 import sys
 args = parser.parse_args()
 def reporthook(count, block_size, total_size):
@@ -76,17 +78,17 @@ print('==> Preparing data..')
 #     size = 384
 # else:
 #     size = 32
-size = 224
+size = 128
 transform_train = transforms.Compose([
-    # transforms.RandomCrop(224, padding=18),
-    # transforms.Resize(size),
+    transforms.RandomCrop(224, padding=18),
+    transforms.Resize(size),
     # transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 ])
 
 transform_test = transforms.Compose([
-    # transforms.Resize(size),
+    transforms.Resize(size),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
@@ -177,10 +179,10 @@ elif args.net == "vit":
         image_size=size,
         patch_size=args.patch,
         num_classes=NUM_CLASSES,
-        dim=512,
+        dim=64,
         depth=6,
         heads=8,
-        mlp_dim=512,
+        mlp_dim=64,
         dropout=0.1,
         emb_dropout=0.1
     )
@@ -202,7 +204,7 @@ elif args.net == "glasses":
 elif args.net == "This":
     # https: // github.com / lukemelas / PyTorch - Pretrained - ViT
     from pytorch_pretrained_vit import ViT
-    net = ViT('B_16_imagenet1k', pretrained=True, image_size=size, num_classes=2)
+    net = ViT('L_32_imagenet1k', pretrained=True, image_size=size, num_classes=2)
 
 net = net.to(device)
 if device == 'cuda':
