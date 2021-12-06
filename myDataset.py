@@ -76,17 +76,17 @@ print('==> Preparing data..')
 #     size = 384
 # else:
 #     size = 32
-size = 224
+size = 188
 transform_train = transforms.Compose([
     # transforms.RandomCrop(224, padding=18),
-    # transforms.Resize(size),
+    transforms.Resize(size),
     # transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 ])
 
 transform_test = transforms.Compose([
-    # transforms.Resize(size),
+    transforms.Resize(size),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
@@ -155,7 +155,7 @@ testloader = torch.utils.data.DataLoader(
 print('==> Building model..')
 # net = VGG('VGG19')
 if args.net == 'res18':
-    net = models.resnet18(pretrained=False)
+    net = models.resnet18(pretrained=True)
     num_classes = NUM_CLASSES
     num_ftrs = net.fc.in_features
     net.fc = nn.Linear(num_ftrs, num_classes)
@@ -184,6 +184,7 @@ elif args.net == "vit":
         dropout=0.1,
         emb_dropout=0.1
     )
+
 elif args.net == "vit_timm":
     import timm
 
@@ -199,10 +200,31 @@ elif args.net == "glasses":
     # cfg = AutoTransform.from_name('vit_large_patch16_224')
     # why there are no class named AutoTransform?? // Jh
     # print(cfg)
+
+    # python myDataset.py --net my
+    # def __init__(
+    #     self,
+    #     name: Optional[str] = None,
+    #     pretrained: bool = False,
+    #     patches: int = 16,
+    #     dim: int = 768,
+    #     ff_dim: int = 3072,
+    #     num_heads: int = 12,
+    #     num_layers: int = 12,
+    #     attention_dropout_rate: float = 0.0,
+    #     dropout_rate: float = 0.1,
+    #     representation_size: Optional[int] = None,
+    #     load_repr_layer: bool = False,
+    #     classifier: str = 'token',
+    #     positional_embedding: str = '1d',
+    #     in_channels: int = 3,
+    #     image_size: Optional[int] = None,
+    #     num_classes: Optional[int] = None,
+    # ):
 elif args.net == "This":
-    # https: // github.com / lukemelas / PyTorch - Pretrained - ViT
-    from pytorch_pretrained_vit import ViT
-    net = ViT('B_16_imagenet1k', pretrained=True, image_size=size, num_classes=2)
+    from ViT_PyTorch.pytorch_pretrained_vit import ViT
+    net = ViT('B_16_imagenet1k', pretrained=True, patches=16, dim=384, num_heads=6, num_layers=6,
+              attention_dropout_rate= 0.1, dropout_rate = 0.1, image_size = size, num_classes=2)
 
 net = net.to(device)
 if device == 'cuda':
@@ -265,7 +287,7 @@ def train(epoch):
         _, predicted = outputs.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
-        # print(predicted, targets)
+
         progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                      % (train_loss / (batch_idx + 1), 100. * correct / total, correct, total))
     return train_loss / (batch_idx + 1)
@@ -287,7 +309,7 @@ def test(epoch):
             test_loss += loss.item()
             _, predicted = outputs.max(1)
             total += targets.size(0)
-            # print(predicted, targets)
+            print(predicted, targets)
             correct += predicted.eq(targets).sum().item()
 
             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'

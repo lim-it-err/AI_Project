@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ViT-PyTorch" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ViT-PyTorch/ViT_PyTorch" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/vision-transformers-cifar10" vcs="" />
   </component>
 </project>
