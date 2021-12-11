@@ -1,6 +1,6 @@
 # glasses Model 사용법 
 
-# Demand Command
+# Demand Command for glasses Module
 !pip install git+https://github.com/FrancescoSaverioZuppichini/glasses
 !pip install huggingface_hub
 !pip install torchinfo
